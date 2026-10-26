@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    { "id": "start", "type": "START" },
+    { "id": "split", "type": "PARALLEL_GATEWAY" },
+    { "id": "legal", "type": "USER_TASK", "assignment": { "type": "USER", "userId": "bob" }, "outcomes": ["OK"] },
+    { "id": "finance", "type": "USER_TASK", "assignment": { "type": "USER", "userId": "dave" }, "outcomes": ["OK"] },
+    { "id": "join", "type": "PARALLEL_GATEWAY" },
+    { "id": "signOff", "type": "USER_TASK", "assignment": { "type": "USER", "userId": "alice" }, "outcomes": ["OK"] },
+    { "id": "done", "type": "END", "endStatus": "DONE" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "split" },
+    { "id": "e2", "source": "split", "target": "legal" },
+    { "id": "e3", "source": "split", "target": "finance" },
+    { "id": "e4", "source": "legal", "target": "join", "outcome": "OK" },
+    { "id": "e5", "source": "finance", "target": "join", "outcome": "OK" },
+    { "id": "e6", "source": "join", "target": "signOff" },
+    { "id": "e7", "source": "signOff", "target": "done", "outcome": "OK" }
+  ]
+}

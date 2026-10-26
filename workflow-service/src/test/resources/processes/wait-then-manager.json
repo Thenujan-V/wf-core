@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    { "id": "start", "type": "START" },
+    { "id": "wait", "type": "TIMER", "duration": "PT1H" },
+    { "id": "approve", "type": "USER_TASK", "assignment": { "type": "INITIATOR_MANAGER", "levels": 1 }, "outcomes": ["OK"] },
+    { "id": "done", "type": "END" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "wait" },
+    { "id": "e2", "source": "wait", "target": "approve" },
+    { "id": "e3", "source": "approve", "target": "done", "outcome": "OK" }
+  ]
+}

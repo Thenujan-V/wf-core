@@ -1,0 +1,20 @@
+{
+  "sections": [
+    { "id": "claim", "title": "Claim", "columns": 2 },
+    { "id": "items", "title": "Receipts", "columns": 1 }
+  ],
+  "fields": [
+    { "key": "amount", "type": "currency", "label": "Amount (LKR)", "section": "claim", "required": true, "min": 1 },
+    { "key": "category", "type": "select", "label": "Category", "section": "claim", "required": true,
+      "options": [ { "value": "travel", "label": "Travel" }, { "value": "meals", "label": "Meals" }, { "value": "other", "label": "Other" } ] },
+    { "key": "purpose", "type": "textarea", "label": "Purpose", "section": "claim", "required": true, "maxLength": 500 },
+    { "key": "justification", "type": "textarea", "label": "Why is this over 10,000?", "section": "claim", "required": true,
+      "visibleWhen": { "var": "form.amount", "op": "gt", "value": 10000 } },
+    { "key": "receiptsHeading", "type": "heading", "label": "Receipts", "section": "items" },
+    { "key": "lines", "type": "table", "label": "Receipts", "section": "items", "maxRows": 20, "totals": ["cost"],
+      "columns": [
+        { "key": "description", "type": "text", "label": "Description", "required": true },
+        { "key": "cost", "type": "currency", "label": "Cost", "required": true, "min": 0 }
+      ] }
+  ]
+}

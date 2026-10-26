@@ -1,0 +1,79 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/wms_notification
+    username: wms_notification
+    password: ${WMS_NOTIFICATION_DB_PASSWORD:wms_notification}
+  rabbitmq:
+    host: ${WMS_RABBIT_HOST:localhost}
+    port: 5672
+    username: ${WMS_RABBIT_USER:wms}
+    password: ${WMS_RABBIT_PASSWORD:wms}
+    connection-timeout: 5s
+    listener:
+      simple:
+        # A failing event is retried with a pause; when the retries are used up it goes back on the queue and is
+        # tried again (NotificationMessaging), so nobody misses a notification because something was down.
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 2s
+  mail:
+    # Mailpit in development; Amazon SES's SMTP endpoint (with username and password) in production.
+    host: ${WMS_SMTP_HOST:localhost}
+    port: ${WMS_SMTP_PORT:1025}
+    username: ${WMS_SMTP_USER:}
+    password: ${WMS_SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          # Jakarta Mail waits for ever by default; a mail server that stops answering must not stop all sending.
+          connectiontimeout: 5000
+          timeout: 10000
+          writetimeout: 10000
+          # Amazon SES needs both.
+          auth: ${WMS_SMTP_AUTH:false}
+          starttls:
+            enable: ${WMS_SMTP_STARTTLS:false}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    mail:
+      # A mail server that is down must not take the service out of rotation: emails wait in their queue.
+      enabled: false
+
+wms:
+  notification:
+    app-url: ${WMS_APP_URL:http://localhost:4200}
+    # A customer's own texts: a properties file whose keys replace the built-in ones (spec §8 per-customer templates).
+    templates: ${WMS_NOTIFICATION_TEMPLATES:}
+    identity:
+      base-url: ${WMS_IDENTITY_URL:http://localhost:8081}
+      token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
+      client-id: wms-notification
+      client-secret: ${WMS_NOTIFICATION_CLIENT_SECRET:dev-notification-secret}
+      connect-timeout: 2s
+      read-timeout: 5s
+    email:
+      from: ${WMS_MAIL_FROM:wms@localhost}
+      dispatch-enabled: true
+      dispatch-interval: PT5S
+      max-attempts: 5
+    push:
+      # The pages that may open the live connection: the app's own address. Comma-separated for more than one.
+      allowed-origins: ${WMS_PUSH_ALLOWED_ORIGINS:${wms.notification.app-url}}

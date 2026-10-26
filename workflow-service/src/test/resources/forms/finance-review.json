@@ -1,0 +1,11 @@
+{
+  "sections": [ { "id": "review", "title": "Finance review", "columns": 2 } ],
+  "fields": [
+    { "key": "amount", "type": "currency", "label": "Amount (LKR)", "section": "review", "required": true, "min": 1 },
+    { "key": "category", "type": "select", "label": "Category", "section": "review", "required": true,
+      "options": [ { "value": "travel", "label": "Travel" }, { "value": "meals", "label": "Meals" }, { "value": "other", "label": "Other" } ] },
+    { "key": "costCentre", "type": "text", "label": "Cost centre", "section": "review", "required": true,
+      "pattern": "[A-Z]{2}-\\d{3}", "maxLength": 6, "help": "Two letters, a dash and three digits, e.g. FN-120" },
+    { "key": "financeNote", "type": "textarea", "label": "Note for the requester", "section": "review", "maxLength": 500 }
+  ]
+}

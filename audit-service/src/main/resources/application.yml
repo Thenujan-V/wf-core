@@ -1,0 +1,42 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: audit-service
+  datasource:
+    # Spec §8: this user has SELECT and INSERT only, so entries cannot be changed or removed through the service.
+    url: jdbc:mysql://localhost:3306/wms_audit
+    username: wms_audit
+    password: ${WMS_AUDIT_DB_PASSWORD:wms_audit}
+  flyway:
+    # Migrations need more than the service's own user may do.
+    user: wms_audit_admin
+    password: ${WMS_AUDIT_MIGRATION_PASSWORD:wms_audit_admin}
+  rabbitmq:
+    host: ${WMS_RABBIT_HOST:localhost}
+    port: 5672
+    username: ${WMS_RABBIT_USER:wms}
+    password: ${WMS_RABBIT_PASSWORD:wms}
+    connection-timeout: 5s
+    listener:
+      simple:
+        # A failing message is retried with a pause; when the retries are used up it goes back on the queue and is
+        # tried again (AuditMessaging.auditRecoverer), so events survive a database outage.
+        retry:
+          enabled: true
+          max-retries: 3
+          initial-interval: 2s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

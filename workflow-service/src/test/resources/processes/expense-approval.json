@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    { "id": "start", "type": "START", "name": "Submit expense", "position": { "x": 40, "y": 200 } },
+    { "id": "managerApproval", "type": "USER_TASK", "name": "Manager approval",
+      "assignment": { "type": "INITIATOR_MANAGER", "levels": 1 },
+      "outcomes": ["APPROVE", "REJECT"], "approvalMode": "SINGLE",
+      "sla": { "dueIn": "PT48H", "reminderPercent": 50, "onBreach": "NOTIFY" } },
+    { "id": "amountCheck", "type": "EXCLUSIVE_GATEWAY", "name": "Large amount?" },
+    { "id": "financeApproval", "type": "USER_TASK", "name": "Finance approval",
+      "assignment": { "type": "ROLE", "role": "wms-admin" }, "outcomes": ["APPROVE", "REJECT"] },
+    { "id": "notifyRequester", "type": "SYSTEM_ACTION", "name": "Tell the requester",
+      "actionType": "SEND_EMAIL", "config": { "to": "${initiator}", "template": "expense-approved" } },
+    { "id": "approved", "type": "END", "name": "Approved", "endStatus": "APPROVED" },
+    { "id": "rejected", "type": "END", "name": "Rejected", "endStatus": "REJECTED" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "managerApproval" },
+    { "id": "e2", "source": "managerApproval", "target": "amountCheck", "outcome": "APPROVE" },
+    { "id": "e3", "source": "managerApproval", "target": "rejected", "outcome": "REJECT" },
+    { "id": "e4", "source": "amountCheck", "target": "financeApproval",
+      "condition": { "var": "form.amount", "op": "gt", "value": 10000 } },
+    { "id": "e5", "source": "amountCheck", "target": "notifyRequester", "default": true },
+    { "id": "e6", "source": "financeApproval", "target": "notifyRequester", "outcome": "APPROVE" },
+    { "id": "e7", "source": "financeApproval", "target": "rejected", "outcome": "REJECT" },
+    { "id": "e8", "source": "notifyRequester", "target": "approved" }
+  ]
+}

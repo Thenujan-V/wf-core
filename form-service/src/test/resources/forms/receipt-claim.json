@@ -1,0 +1,7 @@
+{
+  "sections": [ { "id": "claim", "title": "Claim", "columns": 1 } ],
+  "fields": [
+    { "key": "purpose", "type": "text", "label": "Purpose", "section": "claim", "required": true, "maxLength": 200 },
+    { "key": "receipts", "type": "file", "label": "Receipts", "section": "claim", "required": true }
+  ]
+}

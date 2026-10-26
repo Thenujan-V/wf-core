@@ -1,0 +1,64 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: workflow-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/wms_workflow
+    username: wms_workflow
+    password: ${WMS_WORKFLOW_DB_PASSWORD:wms_workflow}
+  rabbitmq:
+    host: ${WMS_RABBIT_HOST:localhost}
+    port: 5672
+    username: ${WMS_RABBIT_USER:wms}
+    password: ${WMS_RABBIT_PASSWORD:wms}
+    publisher-confirm-type: simple
+    connection-timeout: 5s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+
+wms:
+  outbox:
+    enabled: true
+    poll-interval: PT1S
+    batch-size: 100
+  workflow:
+    stats:
+      # The dashboard's figures are the same for everyone, so each period is worked out at most this often.
+      cache-ttl: PT30S
+    identity:
+      base-url: ${WMS_IDENTITY_URL:http://localhost:8081}
+      token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
+      client-id: wms-workflow
+      client-secret: ${WMS_WORKFLOW_CLIENT_SECRET:dev-workflow-secret}
+      connect-timeout: 2s
+      read-timeout: 5s
+    forms:
+      base-url: ${WMS_FORM_URL:http://localhost:8083}
+      connect-timeout: 2s
+      read-timeout: 5s
+    calendar:
+      zone: UTC
+      weekend: [SATURDAY, SUNDAY]
+      holidays: []
+    jobs:
+      enabled: true
+      poll-interval: PT1S
+      batch-size: 20
+      lease: PT5M
+    webhooks:
+      connect-timeout: 5s
+      read-timeout: 10s
+      allow-private-networks: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

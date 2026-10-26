@@ -1,0 +1,73 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # Fail fast when a service is down or stalled (spec §2.2) instead of holding the caller.
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 30s
+          routes:
+            - id: identity-service
+              uri: ${wms.routes.identity}
+              predicates:
+                - Path=/api/identity/**
+              filters:
+                - StripPrefix=2
+            - id: workflow-service
+              uri: ${wms.routes.workflow}
+              predicates:
+                - Path=/api/workflow/**
+              filters:
+                - StripPrefix=2
+            - id: form-service
+              uri: ${wms.routes.forms}
+              predicates:
+                - Path=/api/forms/**
+              filters:
+                - StripPrefix=2
+            - id: document-service
+              uri: ${wms.routes.documents}
+              predicates:
+                - Path=/api/documents/**
+              filters:
+                - StripPrefix=2
+            - id: audit-service
+              uri: ${wms.routes.audit}
+              predicates:
+                - Path=/api/audit/**
+              filters:
+                - StripPrefix=2
+            - id: notification-service
+              uri: ${wms.routes.notifications}
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - StripPrefix=2
+
+wms:
+  routes:
+    identity: ${WMS_IDENTITY_URL:http://localhost:8081}
+    workflow: ${WMS_WORKFLOW_URL:http://localhost:8082}
+    forms: ${WMS_FORM_URL:http://localhost:8083}
+    documents: ${WMS_DOCUMENT_URL:http://localhost:8084}
+    audit: ${WMS_AUDIT_URL:http://localhost:8085}
+    notifications: ${WMS_NOTIFICATION_URL:http://localhost:8086}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

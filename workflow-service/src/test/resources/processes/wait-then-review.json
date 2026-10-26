@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    { "id": "start", "type": "START" },
+    { "id": "wait", "type": "TIMER", "duration": "PT1H" },
+    { "id": "review", "type": "USER_TASK", "assignment": { "type": "USER", "userId": "bob" }, "outcomes": ["OK"] },
+    { "id": "done", "type": "END" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "wait" },
+    { "id": "e2", "source": "wait", "target": "review" },
+    { "id": "e3", "source": "review", "target": "done", "outcome": "OK" }
+  ]
+}

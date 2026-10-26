@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    { "id": "start", "type": "START", "name": "Submit expense", "form": { "key": "expense-claim", "version": 1 } },
+    { "id": "split", "type": "PARALLEL_GATEWAY" },
+    { "id": "financeCheck", "type": "USER_TASK", "name": "Finance check",
+      "assignment": { "type": "ROLE", "role": "finance" }, "outcomes": ["OK"],
+      "form": { "key": "finance-review", "version": 1, "access": { "category": "HIDDEN" } } },
+    { "id": "managerReview", "type": "USER_TASK", "name": "Manager review",
+      "assignment": { "type": "USER", "userId": "bob" }, "outcomes": ["OK"],
+      "form": { "key": "finance-review", "version": 1 } },
+    { "id": "join", "type": "PARALLEL_GATEWAY" },
+    { "id": "done", "type": "END", "endStatus": "DONE" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "split" },
+    { "id": "e2", "source": "split", "target": "financeCheck" },
+    { "id": "e3", "source": "split", "target": "managerReview" },
+    { "id": "e4", "source": "financeCheck", "target": "join", "outcome": "OK" },
+    { "id": "e5", "source": "managerReview", "target": "join", "outcome": "OK" },
+    { "id": "e6", "source": "join", "target": "done" }
+  ]
+}

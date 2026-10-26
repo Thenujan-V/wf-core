@@ -1,0 +1,40 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: identity-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/wms_identity
+    username: wms_identity
+    password: ${WMS_IDENTITY_DB_PASSWORD:wms_identity}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+
+wms:
+  identity:
+    keycloak:
+      base-url: ${WMS_KEYCLOAK_URL:http://localhost:8180}
+      realm: wms
+      client-id: wms-identity-sync
+      client-secret: ${WMS_IDENTITY_SYNC_SECRET:dev-identity-sync-secret}
+      page-size: 100
+    sync:
+      enabled: true
+      interval: PT15M
+      initial-delay: PT30S
+    org-source:
+      manager: KEYCLOAK
+      department: KEYCLOAK
+      position: KEYCLOAK
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

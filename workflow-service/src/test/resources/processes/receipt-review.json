@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    { "id": "start", "type": "START", "name": "Submit receipts", "form": { "key": "receipt-claim", "version": 1 } },
+    { "id": "review", "type": "USER_TASK", "name": "Review", "assignment": { "type": "USER", "userId": "bob" },
+      "outcomes": ["OK"], "form": { "key": "receipt-claim", "version": 1, "access": { "purpose": "READONLY" } } },
+    { "id": "done", "type": "END", "name": "Done", "endStatus": "DONE" }
+  ],
+  "edges": [
+    { "id": "e1", "source": "start", "target": "review" },
+    { "id": "e2", "source": "review", "target": "done", "outcome": "OK" }
+  ]
+}

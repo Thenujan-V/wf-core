@@ -1,0 +1,93 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: document-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/wms_document
+    username: wms_document
+    password: ${WMS_DOCUMENT_DB_PASSWORD:wms_document}
+  rabbitmq:
+    host: ${WMS_RABBIT_HOST:localhost}
+    port: 5672
+    username: ${WMS_RABBIT_USER:wms}
+    password: ${WMS_RABBIT_PASSWORD:wms}
+    publisher-confirm-type: simple
+    connection-timeout: 5s
+    listener:
+      simple:
+        # A failing message is retried a few times, then dropped (logged) instead of looping forever.
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2s
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+
+wms:
+  outbox:
+    enabled: true
+    poll-interval: PT1S
+    batch-size: 100
+  document:
+    acl-cache: PT5S
+    identity:
+      base-url: ${WMS_IDENTITY_URL:http://localhost:8081}
+      connect-timeout: 2s
+      read-timeout: 5s
+      cache-ttl: PT60S
+    forms:
+      base-url: ${WMS_FORM_URL:http://localhost:8083}
+      connect-timeout: 2s
+      read-timeout: 5s
+    workflow:
+      base-url: ${WMS_WORKFLOW_URL:http://localhost:8082}
+      connect-timeout: 2s
+      read-timeout: 5s
+      cache-ttl: PT60S
+    # document-service's own identity, for what it asks when no person is asking: how a request ended, and names.
+    service-account:
+      token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
+      client-id: wms-document
+      client-secret: ${WMS_DOCUMENT_CLIENT_SECRET:dev-document-secret}
+    approvals:
+      # Finishes approvals that could not be finished when their request ended, and asks workflow-service about
+      # rounds that have waited longer than stale-after without hearing that their request ended.
+      settle-enabled: true
+      settle-interval: PT30S
+      stale-after: PT10M
+    storage:
+      bucket: ${WMS_S3_BUCKET:wms-documents}
+      region: ${WMS_S3_REGION:us-east-1}
+      # Empty endpoint and keys mean AWS S3 with the default credentials chain.
+      endpoint: ${WMS_S3_ENDPOINT:http://localhost:8333}
+      public-endpoint: ${WMS_S3_PUBLIC_ENDPOINT:http://localhost:8333}
+      access-key: ${WMS_S3_ACCESS_KEY:wms}
+      secret-key: ${WMS_S3_SECRET_KEY:wms-dev-secret}
+      path-style: true
+      create-bucket: ${WMS_S3_CREATE_BUCKET:true}
+      cors-origins:
+        - http://localhost:4200
+      upload-expiry: PT15M
+      download-expiry: PT5M
+      max-upload-size: 104857600
+    uploads:
+      confirm-window: PT24H
+      purge-enabled: true
+      purge-interval: PT1H
+    text:
+      backfill-enabled: true
+      backfill-interval: PT5M
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

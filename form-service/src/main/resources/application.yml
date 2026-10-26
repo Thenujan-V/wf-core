@@ -1,0 +1,33 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: form-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/wms_form
+    username: wms_form
+    password: ${WMS_FORM_DB_PASSWORD:wms_form}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}
+          audiences:
+            - wms-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+wms:
+  form:
+    documents:
+      base-url: ${WMS_DOCUMENT_URL:http://localhost:8084}
+      token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
+      client-id: wms-form
+      client-secret: ${WMS_FORM_CLIENT_SECRET:dev-form-secret}
+      connect-timeout: 1s
+      read-timeout: 3s
