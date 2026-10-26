@@ -63,7 +63,7 @@ wms:
     # A customer's own texts: a properties file whose keys replace the built-in ones (spec §8 per-customer templates).
     templates: ${WMS_NOTIFICATION_TEMPLATES:}
     identity:
-      base-url: ${WMS_IDENTITY_URL:http://localhost:8081}
+      base-url: ${WMS_IDENTITY_URL:http://localhost:8087}
       token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
       client-id: wms-notification
       client-secret: ${WMS_NOTIFICATION_CLIENT_SECRET:dev-notification-secret}

@@ -33,7 +33,7 @@ wms:
       # The dashboard's figures are the same for everyone, so each period is worked out at most this often.
       cache-ttl: PT30S
     identity:
-      base-url: ${WMS_IDENTITY_URL:http://localhost:8081}
+      base-url: ${WMS_IDENTITY_URL:http://localhost:8087}
       token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
       client-id: wms-workflow
       client-secret: ${WMS_WORKFLOW_CLIENT_SECRET:dev-workflow-secret}

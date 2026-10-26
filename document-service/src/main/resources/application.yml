@@ -39,7 +39,7 @@ wms:
   document:
     acl-cache: PT5S
     identity:
-      base-url: ${WMS_IDENTITY_URL:http://localhost:8081}
+      base-url: ${WMS_IDENTITY_URL:http://localhost:8087}
       connect-timeout: 2s
       read-timeout: 5s
       cache-ttl: PT60S
