@@ -69,7 +69,8 @@ class GatewayRoutingTest {
 
     @BeforeEach
     void setUp() {
-        client = WebTestClient.bindToApplicationContext(context).apply(springSecurity()).configureClient().build();
+        client = WebTestClient.bindToApplicationContext(context).apply(springSecurity()).configureClient()
+                .baseUrl("http://localhost:8090").build();
     }
 
     @Test
@@ -135,6 +136,35 @@ class GatewayRoutingTest {
                 .expectBody()
                 .jsonPath("$.code").isEqualTo("SERVICE_UNAVAILABLE")
                 .jsonPath("$.detail").isEqualTo("The service is temporarily unavailable. Try again shortly.");
+    }
+
+    @Test
+    void answersCorsPreflightForAllowedOriginsWithoutAToken() {
+        client.options().uri("/api/workflow/instances")
+                .header("Origin", "http://localhost:4200")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "Authorization, Content-Type")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:4200")
+                .expectHeader().doesNotExist("Access-Control-Allow-Credentials");
+
+        client.options().uri("/api/workflow/instances")
+                .header("Origin", "http://evil.example")
+                .header("Access-Control-Request-Method", "POST")
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectHeader().doesNotExist("Access-Control-Allow-Origin");
+    }
+
+    @Test
+    void addsCorsHeadersToApiResponsesForAllowedOrigins() {
+        client.mutateWith(mockJwt()).get().uri("/api/identity/me").header("Origin", "http://localhost:4200").exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:4200");
+        client.get().uri("/api/identity/me").header("Origin", "http://localhost:4200").exchange()
+                .expectStatus().isUnauthorized()
+                .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:4200");
     }
 
     @Test
