@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,9 +44,22 @@ public class InstanceController {
         return ResponseEntity.created(URI.create("/instances/" + id)).body(queries.summary(id).orElseThrow());
     }
 
+    /**
+     * Without a business key: the caller's own requests. With one: every request under that key the caller may see
+     * (all of them for admins), e.g. the requests started for one auraDOCS document.
+     */
     @GetMapping("/instances")
-    public List<InstanceSummary> mine(Authentication auth) {
-        return queries.startedBy(users.userId(auth));
+    public List<InstanceSummary> mine(@RequestParam(required = false) String businessKey, Authentication auth) {
+        String userId = users.userId(auth);
+        if (businessKey == null || businessKey.isBlank()) {
+            return queries.startedBy(userId);
+        }
+        List<InstanceSummary> found = queries.withBusinessKey(businessKey);
+        if (found.isEmpty() || users.isAdmin(auth)) {
+            return found;
+        }
+        List<String> pools = users.candidates(auth);
+        return found.stream().filter(s -> queries.canView(s.id(), userId, pools)).toList();
     }
 
     @GetMapping("/instances/{id}")

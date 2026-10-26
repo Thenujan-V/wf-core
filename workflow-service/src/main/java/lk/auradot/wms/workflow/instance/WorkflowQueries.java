@@ -75,6 +75,11 @@ public class WorkflowQueries {
                 .param("user", userId).query(this::mapSummary).list();
     }
 
+    public List<InstanceSummary> withBusinessKey(String businessKey) {
+        return jdbc.sql(INSTANCES + " WHERE business_key = :key ORDER BY started_at DESC, id LIMIT 200")
+                .param("key", businessKey).query(this::mapSummary).list();
+    }
+
     public Optional<InstanceDetail> detail(String instanceId) {
         return summary(instanceId).map(summary -> new InstanceDetail(summary,
                 json.readMap(jdbc.sql("SELECT variables_json FROM process_instance WHERE id = :id")

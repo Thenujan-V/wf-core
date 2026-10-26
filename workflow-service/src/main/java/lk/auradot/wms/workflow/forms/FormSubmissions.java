@@ -19,6 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class FormSubmissions {
 
+    /** Start-data keys with this prefix pass through without a form field. */
+    public static final String INTEGRATION_PREFIX = "auradocs";
+
     private final FormClient forms;
     private final NodeForms nodeForms;
     private final Map<String, Set<String>> fieldsByVersion = new ConcurrentHashMap<>();
@@ -32,8 +35,30 @@ public class FormSubmissions {
     public Map<String, Object> acceptStart(String definitionId, String startNodeId, String processKey,
                                            Map<String, Object> data, String userId) {
         FormRef ref = nodeForms.of(definitionId).get(startNodeId);
-        return ref == null ? data
-                : submit(new SubmitForm(ref.key(), ref.version(), data, Map.of(), Map.of(), userId, "start:" + processKey));
+        if (ref == null) {
+            return data;
+        }
+        // Context from an integrating app (auraDOCS: auradocsDocId, ...) is kept although the form does not declare it;
+        // form-service would reject it as an unknown field.
+        Map<String, Object> context = new LinkedHashMap<>();
+        Map<String, Object> formData = new LinkedHashMap<>(data);
+        if (data.keySet().stream().anyMatch(k -> k.startsWith(INTEGRATION_PREFIX))) {
+            Set<String> declared = inputFields(ref);
+            data.forEach((key, value) -> {
+                if (key.startsWith(INTEGRATION_PREFIX) && !declared.contains(key)) {
+                    context.put(key, value);
+                    formData.remove(key);
+                }
+            });
+        }
+        Map<String, Object> clean = submit(
+                new SubmitForm(ref.key(), ref.version(), formData, Map.of(), Map.of(), userId, "start:" + processKey));
+        if (context.isEmpty()) {
+            return clean;
+        }
+        Map<String, Object> merged = new LinkedHashMap<>(clean);
+        merged.putAll(context);
+        return merged;
     }
 
     public Map<String, Object> acceptTask(String definitionId, String nodeId, String taskId, Map<String, Object> data,

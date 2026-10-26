@@ -86,6 +86,21 @@ class StartFormTest {
     }
 
     @Test
+    void auraDocsContextKeysBypassTheFormAndStayOnTheRequest() throws Exception {
+        mvc.perform(post("/instances").with(TestJwt.user("carol", "user")).contentType(MediaType.APPLICATION_JSON)
+                        .content(start("expense-with-forms", Map.of("amount", 500, "category", "meals", "purpose", "Lunch",
+                                "auradocsDocId", "42", "auradocsDocName", "Invoice.pdf"))))
+                .andExpect(status().isCreated());
+
+        assertThat(forms.submissions()).singleElement()
+                .satisfies(s -> assertThat(s.data()).doesNotContainKeys("auradocsDocId", "auradocsDocName"));
+        assertThat(jdbc.sql("SELECT variables_json->>'$.form.auradocsDocId' FROM process_instance").query(String.class)
+                .single()).isEqualTo("42");
+        assertThat(jdbc.sql("SELECT variables_json->>'$.form.purpose' FROM process_instance").query(String.class)
+                .single()).isEqualTo("Lunch");
+    }
+
+    @Test
     void invalidStartDataIsExplainedAndNothingStarts() throws Exception {
         forms.rejectNext(List.of(Map.of("field", "purpose", "code", "REQUIRED", "message", "Purpose is required")));
 

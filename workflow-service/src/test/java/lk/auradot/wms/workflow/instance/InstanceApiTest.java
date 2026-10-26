@@ -104,6 +104,33 @@ class InstanceApiTest {
     }
 
     @Test
+    void listsRequestsForABusinessKeyThatTheCallerMaySee() throws Exception {
+        String body = mvc.perform(post("/instances").with(TestJwt.user("carol", "user"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("processKey", "expense-approval", "businessKey", "auradocs-doc:42",
+                                "data", Map.of("amount", 10, "auradocsDocId", "42")))))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String id = (String) mapper.readValue(body, Map.class).get("id");
+        start("expense-approval", "dave", Map.of("amount", 10));
+
+        mvc.perform(get("/instances").param("businessKey", "auradocs-doc:42").with(TestJwt.user("carol", "user")))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value(id))
+                .andExpect(jsonPath("$[0].businessKey").value("auradocs-doc:42"));
+        mvc.perform(get("/instances").param("businessKey", "auradocs-doc:42").with(TestJwt.user("bob", "user")))
+                .andExpect(jsonPath("$", hasSize(1)));
+        mvc.perform(get("/instances").param("businessKey", "auradocs-doc:42").with(TestJwt.user("eve", "user")))
+                .andExpect(jsonPath("$", hasSize(0)));
+        mvc.perform(get("/instances").param("businessKey", "auradocs-doc:42").with(TestJwt.user("alice", "wms-admin")))
+                .andExpect(jsonPath("$", hasSize(1)));
+        mvc.perform(get("/instances").param("businessKey", "auradocs-doc:7").with(TestJwt.user("alice", "wms-admin")))
+                .andExpect(jsonPath("$", hasSize(0)));
+        mvc.perform(get("/instances").with(TestJwt.user("eve", "user"))).andExpect(jsonPath("$", hasSize(0)));
+        mvc.perform(get("/instances/" + id).with(TestJwt.user("carol", "user")))
+                .andExpect(jsonPath("$.variables.form.auradocsDocId").value("42"));
+    }
+
+    @Test
     void groupInboxFollowsDirectoryGroupsAndDelegationMovesTasks() throws Exception {
         start("expense-approval", "carol", Map.of("amount", 20000));
         String managerTask = onlyTaskId("bob", "mine", "user");
