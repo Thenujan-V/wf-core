@@ -1,0 +1,23 @@
+# Integrated mode: auraDOCS' Keycloak (realm auraDOCS) is the IdP, and groups/departments come from auraDOCS.
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8080/realms/auraDOCS}
+
+wms:
+  identity:
+    source: AURADOCS
+    keycloak:
+      base-url: ${WMS_KEYCLOAK_URL:http://localhost:8080}
+      realm: ${WMS_KEYCLOAK_REALM:auraDOCS}
+    auradocs:
+      base-url: ${WMS_AURADOCS_URL:http://localhost:9191}
+      directory-path: /integration/wms/directory
+      # auraDOCS role -> WMS role(s), added to the user's Keycloak realm roles. Brackets keep the key as written.
+      role-map:
+        "[ROLE_ADMIN]": wms-admin
+    # auraDOCS has no reporting lines; managers are edited in WMS.
+    org-source:
+      manager: LOCAL

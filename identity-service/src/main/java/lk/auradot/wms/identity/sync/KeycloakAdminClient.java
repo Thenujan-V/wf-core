@@ -93,7 +93,8 @@ public class KeycloakAdminClient {
         return body == null ? List.of() : body;
     }
 
-    private synchronized String token() {
+    /** A client-credentials token for the sync client, cached until shortly before it expires. */
+    synchronized String token() {
         Instant now = clock.instant();
         if (accessToken != null && now.isBefore(expiresAt.minus(EXPIRY_SKEW))) {
             return accessToken;

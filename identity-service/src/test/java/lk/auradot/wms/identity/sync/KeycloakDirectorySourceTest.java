@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class DirectorySnapshotLoaderTest {
+class KeycloakDirectorySourceTest {
 
     @Test
     void loadsUsersRolesGroupsAndMembersSkippingServiceAccounts() {
@@ -21,7 +21,7 @@ class DirectorySnapshotLoaderTest {
         when(keycloak.listGroups()).thenReturn(List.of(new KcGroup("g1", "Management", "/Management", 0)));
         when(keycloak.groupMemberIds("g1")).thenReturn(List.of("1", "sa"));
 
-        DirectorySnapshot snapshot = new DirectorySnapshotLoader(keycloak).load();
+        DirectorySnapshot snapshot = new KeycloakDirectorySource(keycloak).load();
 
         assertThat(snapshot.users()).extracting(KcUser::id).containsExactly("1");
         assertThat(snapshot.rolesByUserId()).containsOnlyKeys("1");

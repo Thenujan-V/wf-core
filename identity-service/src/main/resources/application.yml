@@ -18,9 +18,11 @@ spring:
 
 wms:
   identity:
+    # KEYCLOAK (default) or AURADOCS; see docs/auradocs-integration.md and application-auradocs.yml.
+    source: ${WMS_IDENTITY_SOURCE:KEYCLOAK}
     keycloak:
       base-url: ${WMS_KEYCLOAK_URL:http://localhost:8180}
-      realm: wms
+      realm: ${WMS_KEYCLOAK_REALM:wms}
       client-id: wms-identity-sync
       client-secret: ${WMS_IDENTITY_SYNC_SECRET:dev-identity-sync-secret}
       page-size: 100
