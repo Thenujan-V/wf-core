@@ -4,6 +4,11 @@ In integrated mode auraDOCS' Keycloak (realm `auraDOCS`, http://localhost:8080) 
 and identity-service reads groups and departments from auraDOCS. Run `deploy/keycloak/auradocs-realm-setup.sh` once
 to create the WMS roles and clients in that realm.
 
+The WMS front stays a separate app (dev: `npm run start:auradocs` on http://localhost:4300). auraDOCS links to it and
+opens it in a new browser tab; the shared Keycloak session signs the person in without a second login. Only the
+backends talk to each other: identity-service reads the auraDOCS directory, and the auraDOCS document panel calls
+the WMS workflow API directly with the person's auraDOCS token.
+
 ## identity-service
 
 Start it with the `auradocs` profile (`SPRING_PROFILES_ACTIVE=auradocs`). The profile sets:
@@ -44,10 +49,11 @@ The other services only need the issuer. Their service-account token URLs are de
   audit services.
 - Use the auraDOCS-realm secrets of the service clients: `WMS_WORKFLOW_CLIENT_SECRET`, `WMS_FORM_CLIENT_SECRET`,
   `WMS_DOCUMENT_CLIENT_SECRET` and `WMS_NOTIFICATION_CLIENT_SECRET`.
-- `WMS_APP_URL=http://localhost:4300` for notification-service, so that links in emails open the integrated WMS front.
-- Gateway CORS for `/api/**`: `WMS_CORS_ALLOWED_ORIGINS` is a comma-separated list. The default is
-  `http://localhost:4200`, the auraDOCS front. Add `http://localhost:4300` only if the WMS front calls the gateway
-  directly rather than through its dev proxy.
+- `WMS_APP_URL=http://localhost:4300` for notification-service, so that links in emails open the WMS front.
+- Gateway CORS for `/api/**`: `WMS_CORS_ALLOWED_ORIGINS` is a comma-separated list and must include the auraDOCS
+  front's origin, because its document panel calls the workflow API from the browser. The default is
+  `http://localhost:4200`. Add `http://localhost:4300` only if the WMS front calls the gateway directly rather than
+  through its dev proxy.
 
 ## Workflow API used by auraDOCS
 
