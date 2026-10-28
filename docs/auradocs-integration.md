@@ -43,13 +43,14 @@ What the sync does with `source=AURADOCS`:
 
 ## Other services and the gateway
 
-The other services only need the issuer. Their service-account token URLs are derived from it.
+Start the gateway, workflow, form, document, notification and audit services with the `auradocs` profile too
+(the IntelliJ run configurations in `.idea/runConfigurations` already do). The profile sets the issuer to
+`http://localhost:8080/realms/auraDOCS` and the service-account token URLs that derive from it, and for
+notification-service sets `wms.notification.app-url` to `http://localhost:4300`.
 
-- `WMS_OIDC_ISSUER=http://localhost:8080/realms/auraDOCS` for gateway, workflow, form, document, notification and
-  audit services.
+- `WMS_OIDC_ISSUER` and `WMS_APP_URL` still override these values.
 - Use the auraDOCS-realm secrets of the service clients: `WMS_WORKFLOW_CLIENT_SECRET`, `WMS_FORM_CLIENT_SECRET`,
   `WMS_DOCUMENT_CLIENT_SECRET` and `WMS_NOTIFICATION_CLIENT_SECRET`.
-- `WMS_APP_URL=http://localhost:4300` for notification-service, so that links in emails open the WMS front.
 - Gateway CORS for `/api/**`: `WMS_CORS_ALLOWED_ORIGINS` is a comma-separated list and must include the auraDOCS
   front's origin, because its document panel calls the workflow API from the browser. The default is
   `http://localhost:4200`. Add `http://localhost:4300` only if the WMS front calls the gateway directly rather than

@@ -1,0 +1,14 @@
+# Integrated mode: auraDOCS' Keycloak (realm auraDOCS) is the IdP; see docs/auradocs-integration.md.
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${WMS_OIDC_ISSUER:http://localhost:8080/realms/auraDOCS}
+
+wms:
+  notification:
+    # Links in emails open the WMS front, which runs beside auraDOCS.
+    app-url: ${WMS_APP_URL:http://localhost:4300}
+    identity:
+      token-url: ${WMS_OIDC_ISSUER:http://localhost:8080/realms/auraDOCS}/protocol/openid-connect/token
