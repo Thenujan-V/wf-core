@@ -73,53 +73,6 @@ class WorkflowCommandsTest {
     }
 
     @Test
-    void startingAgainWithTheSameBusinessKeyReturnsTheFirstRequest() {
-        WorkflowCommands.Started first = commands.startOnce("expense-approval", "carol", Map.of("amount", 500), "DOC-1");
-        WorkflowCommands.Started again = commands.startOnce("expense-approval", "carol", Map.of("amount", 500), "DOC-1");
-
-        assertThat(first.created()).isTrue();
-        assertThat(again.created()).isFalse();
-        assertThat(again.id()).isEqualTo(first.id());
-        assertThat(jdbc.sql("SELECT COUNT(*) FROM process_instance").query(Integer.class).single()).isEqualTo(1);
-        assertThat(openTasks(first.id())).hasSize(1);
-    }
-
-    @Test
-    void aBusinessKeyOfAnotherInitiatorOrProcessIsAConflict() {
-        commands.start("expense-approval", "carol", Map.of("amount", 500), "DOC-2");
-
-        assertThatThrownBy(() -> commands.start("expense-approval", "dave", Map.of("amount", 500), "DOC-2"))
-                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("WF_BUSINESS_KEY_CONFLICT"));
-        assertThatThrownBy(() -> commands.start("parallel-signoff", "carol", Map.of(), "DOC-2"))
-                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("WF_BUSINESS_KEY_CONFLICT"));
-        assertThat(jdbc.sql("SELECT COUNT(*) FROM process_instance").query(Integer.class).single()).isEqualTo(1);
-    }
-
-    @Test
-    void concurrentStartsWithTheSameBusinessKeyCreateOneRequest() throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        CountDownLatch go = new CountDownLatch(1);
-        try {
-            List<Future<WorkflowCommands.Started>> results = new ArrayList<>();
-            for (int i = 0; i < 2; i++) {
-                results.add(pool.submit(() -> {
-                    go.await();
-                    return commands.startOnce("expense-approval", "carol", Map.of("amount", 500), "DOC-3");
-                }));
-            }
-            go.countDown();
-            WorkflowCommands.Started a = results.get(0).get();
-            WorkflowCommands.Started b = results.get(1).get();
-
-            assertThat(a.id()).isEqualTo(b.id());
-            assertThat(List.of(a.created(), b.created())).containsExactlyInAnyOrder(true, false);
-        } finally {
-            pool.shutdownNow();
-        }
-        assertThat(jdbc.sql("SELECT COUNT(*) FROM process_instance").query(Integer.class).single()).isEqualTo(1);
-    }
-
-    @Test
     void engineRefusalsBecomeApiErrorsAndChangeNothing() {
         String id = commands.start("expense-approval", "carol", Map.of(), null);
         Task manager = openTasks(id).getFirst();

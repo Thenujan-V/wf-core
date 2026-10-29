@@ -29,12 +29,7 @@ public sealed interface EngineEvent {
     record JobDead(String jobId, String error) implements EngineEvent { }
     record JobRetried(String jobId, String actorId) implements EngineEvent { }
     record InstanceCompleted(String endStatus) implements EngineEvent { }
-    /** {@code reason} is optional: why a service or administrator stopped the request. */
-    record InstanceCancelled(String actorId, String reason) implements EngineEvent {
-        public InstanceCancelled(String actorId) {
-            this(actorId, null);
-        }
-    }
+    record InstanceCancelled(String actorId) implements EngineEvent { }
     record InstanceSuspended(String actorId) implements EngineEvent { }
     record InstanceResumed(String actorId) implements EngineEvent { }
 }

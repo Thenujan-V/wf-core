@@ -52,12 +52,8 @@ class StartFormTest {
         definitions.publish("expense-approval", "bob");
     }
 
-    /** Each start names its own request; a reused business key would replay the earlier start. */
-    private int nextKey;
-
     private String start(String processKey, Map<String, Object> data) throws Exception {
-        String key = nextKey++ == 0 ? "EXP-F" : "EXP-F" + nextKey;
-        return mapper.writeValueAsString(Map.of("processKey", processKey, "businessKey", key, "data", data));
+        return mapper.writeValueAsString(Map.of("processKey", processKey, "businessKey", "EXP-F", "data", data));
     }
 
     private int instances() {

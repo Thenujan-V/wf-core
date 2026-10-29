@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,20 +38,9 @@ public class InstanceController {
 
     @PostMapping("/instances")
     public ResponseEntity<InstanceSummary> start(@Valid @RequestBody StartRequest request, Authentication auth) {
-        WorkflowCommands.Started started = commands.startOnce(request.processKey(), users.userId(auth),
+        String id = commands.start(request.processKey(), users.userId(auth),
                 request.data() == null ? Map.of() : request.data(), request.businessKey());
-        InstanceSummary summary = queries.summary(started.id()).orElseThrow();
-        // a replayed start (same business key) answers 200 with the request it already created
-        return started.created()
-                ? ResponseEntity.created(URI.create("/instances/" + started.id())).body(summary)
-                : ResponseEntity.ok(summary);
-    }
-
-    /** For other services: find the request they started under a business key (e.g. after a timed-out start). */
-    @GetMapping("/instances/lookup")
-    @PreAuthorize("hasAnyRole('wms-service', 'wms-admin')")
-    public InstanceSummary lookup(@RequestParam String businessKey) {
-        return queries.summaryByBusinessKey(businessKey).orElseThrow(InstanceController::notFound);
+        return ResponseEntity.created(URI.create("/instances/" + id)).body(queries.summary(id).orElseThrow());
     }
 
     @GetMapping("/instances")
@@ -103,15 +91,12 @@ public class InstanceController {
         return new InstanceAccess(id, summary.processKey(), summary.status(), true, attach);
     }
 
-    /** Administrators, and services stopping requests they started (e.g. a withdrawn document review). */
     @PostMapping("/instances/{id}/cancel")
-    @PreAuthorize("hasAnyRole('wms-admin', 'wms-service')")
+    @PreAuthorize("hasRole('wms-admin')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancel(@PathVariable String id, @Valid @RequestBody(required = false) CancelRequest request,
-                       Authentication auth) {
-        String actor = users.userId(auth);
-        String reason = request == null ? null : request.reason();
-        commands.onInstance(id, actor, (p, s) -> engine.cancel(p, s, actor, reason));
+    public void cancel(@PathVariable String id, Authentication auth) {
+        String admin = users.userId(auth);
+        commands.onInstance(id, admin, (p, s) -> engine.cancel(p, s, admin));
     }
 
     @PostMapping("/instances/{id}/suspend")

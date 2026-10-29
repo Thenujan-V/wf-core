@@ -188,18 +188,13 @@ public final class ProcessEngine {
     }
 
     public void cancel(CompiledProcess process, InstanceState state, String actorId) {
-        cancel(process, state, actorId, null);
-    }
-
-    public void cancel(CompiledProcess process, InstanceState state, String actorId, String reason) {
         if (state.status() != InstanceStatus.ACTIVE && state.status() != InstanceStatus.SUSPENDED) {
             throw new EngineException(EngineError.INSTANCE_NOT_ACTIVE, "The instance has already ended");
         }
         Instant now = clock.instant();
         for (Task task : state.openTasks()) {
             task.cancel(now);
-            state.record(new EngineEvent.TaskCancelled(task.id(),
-                    reason == null ? "Instance cancelled" : "Instance cancelled: " + reason));
+            state.record(new EngineEvent.TaskCancelled(task.id(), "Instance cancelled"));
         }
         for (Job job : state.jobs()) {
             if (job.status() == JobStatus.PENDING || job.status() == JobStatus.SUSPENDED || job.status() == JobStatus.DEAD) {
@@ -208,7 +203,7 @@ public final class ProcessEngine {
         }
         state.tokens().forEach(Token::end);
         state.finish(InstanceStatus.CANCELLED, now);
-        state.record(new EngineEvent.InstanceCancelled(actorId, reason));
+        state.record(new EngineEvent.InstanceCancelled(actorId));
     }
 
     public void suspend(CompiledProcess process, InstanceState state, String actorId) {

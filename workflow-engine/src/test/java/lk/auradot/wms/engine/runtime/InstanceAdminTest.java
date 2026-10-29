@@ -32,19 +32,6 @@ class InstanceAdminTest {
     }
 
     @Test
-    void aCancelReasonIsRecordedOnTheInstanceAndItsTasks() {
-        InstanceState s = fx.engine.start(process, "carol", Map.of(), null);
-        s.drainEvents();
-
-        fx.engine.cancel(process, s, "auradocs", "Withdrawn by carol");
-
-        assertThat(s.drainEvents())
-                .contains(new EngineEvent.InstanceCancelled("auradocs", "Withdrawn by carol"))
-                .anySatisfy(e -> assertThat(e).isInstanceOfSatisfying(EngineEvent.TaskCancelled.class,
-                        cancelled -> assertThat(cancelled.toString()).contains("Withdrawn by carol")));
-    }
-
-    @Test
     void cancelEndsEverythingAndBlocksFurtherWork() {
         InstanceState s = fx.engine.start(process, "carol", Map.of(), null);
         String taskId = s.openTasks().getFirst().id();

@@ -10,15 +10,12 @@ import lk.auradot.wms.workflow.definition.DefinitionStore;
 import lk.auradot.wms.workflow.definition.StoredDefinition;
 import lk.auradot.wms.workflow.directory.DirectoryUnavailableException;
 import lk.auradot.wms.workflow.forms.FormSubmissions;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -54,45 +51,7 @@ public class WorkflowCommands {
         this.engine = engine;
     }
 
-    /** The instance a start resolved to, and whether this call created it or replayed an earlier start. */
-    public record Started(String id, boolean created) {
-    }
-
     public String start(String processKey, String userId, Map<String, Object> data, String businessKey) {
-        return startOnce(processKey, userId, data, businessKey).id();
-    }
-
-    /**
-     * A business key names one request: starting again with the same key (a client retry, a double submit) returns
-     * the instance it already started instead of a duplicate. The same key for another process or another initiator
-     * is a conflict, not a replay.
-     */
-    public Started startOnce(String processKey, String userId, Map<String, Object> data, String businessKey) {
-        if (businessKey != null) {
-            Optional<Started> replay = existing(processKey, userId, businessKey);
-            if (replay.isPresent()) {
-                return replay.get();
-            }
-        }
-        try {
-            return new Started(create(processKey, userId, data, businessKey), true);
-        } catch (DuplicateKeyException e) {
-            // a concurrent start with the same key won the unique index
-            return existing(processKey, userId, businessKey).orElseThrow(() -> e);
-        }
-    }
-
-    private Optional<Started> existing(String processKey, String userId, String businessKey) {
-        return instances.findByBusinessKey(businessKey).map(found -> {
-            if (!found.processKey().equals(processKey) || !Objects.equals(found.initiatorId(), userId)) {
-                throw ApiException.conflict("WF_BUSINESS_KEY_CONFLICT",
-                        "Business key '" + businessKey + "' already belongs to another request");
-            }
-            return new Started(found.id(), false);
-        });
-    }
-
-    private String create(String processKey, String userId, Map<String, Object> data, String businessKey) {
         StoredDefinition definition = definitions.latestPublished(processKey).orElseThrow(
                 () -> ApiException.notFound("WF_PROCESS_NOT_FOUND", "No published process '" + processKey + "'"));
         CompiledProcess process = processes.get(definition.id());
