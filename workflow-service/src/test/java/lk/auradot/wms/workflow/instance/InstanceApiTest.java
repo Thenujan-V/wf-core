@@ -45,13 +45,16 @@ class InstanceApiTest {
         definitions.publish("wait-until-date", "bob");
     }
 
+    /** Each start names its own request; the first one in a test is EXP-7. Reusing a key would replay that start. */
+    private int nextKey = 7;
+
     private String json(Object value) {
         return mapper.writeValueAsString(value);
     }
 
     private String start(String processKey, String user, Map<String, Object> data) throws Exception {
         String body = mvc.perform(post("/instances").with(TestJwt.user(user, "user")).contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("processKey", processKey, "businessKey", "EXP-7", "data", data))))
+                        .content(json(Map.of("processKey", processKey, "businessKey", "EXP-" + nextKey++, "data", data))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andReturn().getResponse().getContentAsString();
@@ -101,6 +104,43 @@ class InstanceApiTest {
         mvc.perform(get("/instances/" + id).with(TestJwt.user("eve", "user")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("WF_INSTANCE_NOT_FOUND"));
+    }
+
+    @Test
+    void aReplayedStartAnswersOkWithTheSameRequestAndServicesLookItUpByKey() throws Exception {
+        String id = start("expense-approval", "carol", Map.of("amount", 1));
+
+        mvc.perform(post("/instances").with(TestJwt.user("carol", "user")).contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("processKey", "expense-approval", "businessKey", "EXP-7",
+                                "data", Map.of("amount", 1)))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id));
+        mvc.perform(post("/instances").with(TestJwt.user("dave", "user")).contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("processKey", "expense-approval", "businessKey", "EXP-7", "data", Map.of()))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("WF_BUSINESS_KEY_CONFLICT"));
+
+        mvc.perform(get("/instances/lookup").param("businessKey", "EXP-7").with(TestJwt.user("svc", "wms-service")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id));
+        mvc.perform(get("/instances/lookup").param("businessKey", "NOPE").with(TestJwt.user("svc", "wms-service")))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/instances/lookup").param("businessKey", "EXP-7").with(TestJwt.user("carol", "user")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void aServiceCancelsARequestItStartedWithAReason() throws Exception {
+        String id = start("expense-approval", "carol", Map.of("amount", 1));
+
+        mvc.perform(post("/instances/" + id + "/cancel").with(TestJwt.user("svc", "wms-service"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("reason", "Withdrawn by carol"))))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/instances/" + id + "/cancel").with(TestJwt.user("svc", "wms-service")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("WF_INSTANCE_NOT_ACTIVE"));
+        mvc.perform(get("/instances/" + id + "/history").with(TestJwt.user("carol", "user")))
+                .andExpect(jsonPath("$[?(@.type == 'InstanceCancelled')].data.reason").value(hasItem("Withdrawn by carol")));
     }
 
     @Test

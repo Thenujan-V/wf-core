@@ -19,13 +19,22 @@ public class UserContext {
     static final String ADMIN = "ROLE_wms-admin";
 
     private final Directory directory;
+    private final UserIdProperties ids;
 
-    public UserContext(Directory directory) {
+    public UserContext(Directory directory, UserIdProperties ids) {
         this.directory = directory;
+        this.ids = ids;
     }
 
+    /** The configured id claim, falling back to {@code sub} when the token does not carry it. */
     public String userId(Authentication authentication) {
-        return ((Jwt) authentication.getPrincipal()).getSubject();
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String id = jwt.getClaimAsString(ids.userIdClaim());
+        if (id == null || id.isBlank()) {
+            return jwt.getSubject();
+        }
+        int at = id.indexOf('@');
+        return ids.stripEmailDomain() && at > 0 ? id.substring(0, at) : id;
     }
 
     public boolean isAdmin(Authentication authentication) {

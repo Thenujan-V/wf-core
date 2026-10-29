@@ -1,16 +1,16 @@
 server:
-  port: 8082
+  port: ${SERVER_PORT:8082}
 
 spring:
   application:
     name: workflow-service
   datasource:
-    url: jdbc:mysql://localhost:3306/wms_workflow
-    username: wms_workflow
+    url: ${WMS_WORKFLOW_DB_URL:jdbc:mysql://localhost:3306/wms_workflow}
+    username: ${WMS_WORKFLOW_DB_USER:wms_workflow}
     password: ${WMS_WORKFLOW_DB_PASSWORD:wms_workflow}
   rabbitmq:
     host: ${WMS_RABBIT_HOST:localhost}
-    port: 5672
+    port: ${WMS_RABBIT_PORT:5672}
     username: ${WMS_RABBIT_USER:wms}
     password: ${WMS_RABBIT_PASSWORD:wms}
     publisher-confirm-type: simple
@@ -35,7 +35,7 @@ wms:
     identity:
       base-url: ${WMS_IDENTITY_URL:http://localhost:8087}
       token-url: ${WMS_OIDC_ISSUER:http://localhost:8180/realms/wms}/protocol/openid-connect/token
-      client-id: wms-workflow
+      client-id: ${WMS_WORKFLOW_CLIENT_ID:wms-workflow}
       client-secret: ${WMS_WORKFLOW_CLIENT_SECRET:dev-workflow-secret}
       connect-timeout: 2s
       read-timeout: 5s
@@ -43,6 +43,18 @@ wms:
       base-url: ${WMS_FORM_URL:http://localhost:8083}
       connect-timeout: 2s
       read-timeout: 5s
+    security:
+      # Which token claim is the user id. AuraDOCS keys users by preferred_username without the email domain.
+      user-id-claim: ${WMS_USER_ID_CLAIM:sub}
+      strip-email-domain: ${WMS_USER_ID_STRIP_EMAIL_DOMAIN:false}
+    directory:
+      # identity: identity-service (stand-alone WMS); auradocs: AuraDOCS owns users, departments, groups and roles.
+      provider: ${WMS_DIRECTORY_PROVIDER:identity}
+      auradocs:
+        base-url: ${WMS_AURADOCS_DIRECTORY_URL:http://localhost:9191/integration/v1/directory}
+        connect-timeout: 2s
+        read-timeout: 5s
+        cache-ttl: 60s
     calendar:
       zone: UTC
       weekend: [SATURDAY, SUNDAY]

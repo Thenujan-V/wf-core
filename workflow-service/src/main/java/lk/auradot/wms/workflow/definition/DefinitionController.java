@@ -3,11 +3,11 @@ package lk.auradot.wms.workflow.definition;
 import jakarta.validation.Valid;
 import lk.auradot.wms.common.error.ApiException;
 import lk.auradot.wms.engine.definition.ValidationError;
+import lk.auradot.wms.workflow.instance.UserContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,9 +28,11 @@ public class DefinitionController {
     private static final Pattern KEY = Pattern.compile("[a-z0-9][a-z0-9-]{1,99}");
 
     private final DefinitionStore store;
+    private final UserContext users;
 
-    public DefinitionController(DefinitionStore store) {
+    public DefinitionController(DefinitionStore store, UserContext users) {
         this.store = store;
+        this.users = users;
     }
 
     @GetMapping
@@ -46,8 +48,8 @@ public class DefinitionController {
 
     @PutMapping("/{key}/draft")
     public Draft saveDraft(@PathVariable String key, @Valid @RequestBody DraftRequest request,
-                           @AuthenticationPrincipal Jwt jwt) {
-        store.saveDraft(requireKey(key), request.name().trim(), request.graph(), jwt.getSubject());
+                           Authentication auth) {
+        store.saveDraft(requireKey(key), request.name().trim(), request.graph(), users.userId(auth));
         return store.draft(key).orElseThrow();
     }
 
@@ -58,8 +60,8 @@ public class DefinitionController {
     }
 
     @PostMapping("/{key}/publish")
-    public ResponseEntity<PublishedView> publish(@PathVariable String key, @AuthenticationPrincipal Jwt jwt) {
-        StoredDefinition published = store.publish(requireKey(key), jwt.getSubject());
+    public ResponseEntity<PublishedView> publish(@PathVariable String key, Authentication auth) {
+        StoredDefinition published = store.publish(requireKey(key), users.userId(auth));
         return ResponseEntity.status(HttpStatus.CREATED).body(PublishedView.of(published));
     }
 

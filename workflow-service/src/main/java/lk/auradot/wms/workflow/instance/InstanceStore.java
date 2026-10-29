@@ -38,6 +38,18 @@ public class InstanceStore {
         this.json = json;
     }
 
+    /** Who started the request a business key names; the key is unique (V4). */
+    public record KeyedInstance(String id, String processKey, String initiatorId) {
+    }
+
+    public Optional<KeyedInstance> findByBusinessKey(String businessKey) {
+        return jdbc.sql("SELECT id, process_key, initiator_id FROM process_instance WHERE business_key = :key")
+                .param("key", businessKey)
+                .query((rs, n) -> new KeyedInstance(rs.getString("id"), rs.getString("process_key"),
+                        rs.getString("initiator_id")))
+                .optional();
+    }
+
     public void insert(String definitionId, InstanceState s) {
         jdbc.sql("""
                         INSERT INTO process_instance (id, definition_id, process_key, process_version, business_key,

@@ -70,6 +70,11 @@ public class WorkflowQueries {
         return jdbc.sql(INSTANCES + " WHERE id = :id").param("id", instanceId).query(this::mapSummary).optional();
     }
 
+    public Optional<InstanceSummary> summaryByBusinessKey(String businessKey) {
+        return jdbc.sql(INSTANCES + " WHERE business_key = :key").param("key", businessKey)
+                .query(this::mapSummary).optional();
+    }
+
     public List<InstanceSummary> startedBy(String userId) {
         return jdbc.sql(INSTANCES + " WHERE initiator_id = :user ORDER BY started_at DESC, id LIMIT 200")
                 .param("user", userId).query(this::mapSummary).list();
